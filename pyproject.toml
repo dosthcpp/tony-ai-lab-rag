@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tony-local-rag"
+version = "0.1.0"
+description = "Minimal local-only RAG baseline backed by Ollama"
+requires-python = ">=3.11"
+
+[project.scripts]
+local-rag = "local_rag.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

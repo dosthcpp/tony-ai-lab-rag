@@ -1,0 +1,1 @@
+Tony AI Lab keeps this RAG baseline local. Ollama provides both document embeddings and grounded answer generation. The default embedding model is nomic-embed-text, and the default generation model is llama3.2. No cloud API key is required.
