@@ -19,11 +19,13 @@ ollama pull nomic-embed-text
 ollama pull llama3.2
 python3 -m venv .venv
 .venv/bin/pip install -e . pytest
-local-rag ingest notes.md handbook.txt
+local-rag ingest --root ./course-materials course-materials/notes.md course-materials/handbook.pdf
 local-rag ask "What does the handbook say about backups?"
 ```
 
-The index defaults to `.rag-index.json`. Input is limited to UTF-8 text and Markdown in this baseline. Answers are instructed to use retrieved context only and emit numbered citations; the CLI prints the corresponding source paths and chunk scores.
+The index defaults to `.rag-index.json`. Ingestion supports UTF-8 text, heading-aware Markdown, and text-based PDF files. Every chunk stores a deterministic document/chunk ID, title, page (PDF), section (Markdown), source-relative path, text, and embedding. Answers use retrieved context only and emit numbered citations with this metadata.
+
+Every input must resolve inside an explicitly approved `--root` (repeat it for multiple roots); the current directory is the safe default. Resolved-path checks reject traversal and symlink escapes. Unsupported file types are rejected. Keep approved roots narrow and do not ingest private course material into any external service.
 
 ## Validate
 
@@ -34,5 +36,6 @@ The index defaults to `.rag-index.json`. Input is limited to UTF-8 text and Mark
 ## Known baseline limits
 
 - JSON index and exact cosine scan are intended for small local corpora.
-- There is no PDF parser, OCR, reranker, access-control layer, or HTTP API yet.
+- Scanned/image-only PDFs require a separately reviewed local OCR step; this baseline does not perform OCR.
+- There is no reranker, multi-user authorization layer, or HTTP API yet.
 - Source files are read at ingestion time; keep the generated index private if documents are sensitive.

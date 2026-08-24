@@ -11,12 +11,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--ollama-url", default="http://127.0.0.1:11434")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    ingest = subparsers.add_parser("ingest", help="Index UTF-8 text or Markdown files")
+    ingest = subparsers.add_parser("ingest", help="Index PDF, UTF-8 text, or Markdown files")
     ingest.add_argument("files", nargs="+", type=Path)
     ingest.add_argument("--index", type=Path, default=Path(".rag-index.json"))
     ingest.add_argument("--embedding-model", default="nomic-embed-text")
     ingest.add_argument("--chunk-size", type=int, default=900)
     ingest.add_argument("--overlap", type=int, default=150)
+    ingest.add_argument(
+        "--root", type=Path, action="append", default=None,
+        help="Approved document root (repeatable; defaults to the current directory)",
+    )
 
     ask = subparsers.add_parser("ask", help="Retrieve evidence and answer locally")
     ask.add_argument("question")
@@ -30,7 +34,9 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     client = OllamaClient(args.ollama_url)
     if args.command == "ingest":
-        chunks = ingest_files(args.files, client, args.embedding_model, args.chunk_size, args.overlap)
+        chunks = ingest_files(
+            args.files, client, args.embedding_model, args.chunk_size, args.overlap, args.root
+        )
         save_index(args.index, chunks, args.embedding_model)
         print(f"Indexed {len(chunks)} chunks into {args.index}")
         return 0
@@ -41,7 +47,10 @@ def main(argv: list[str] | None = None) -> int:
     print(client.generate(answer_prompt(args.question, matches), args.model))
     print("\nSources:")
     for number, (score, chunk) in enumerate(matches, start=1):
-        print(f"[{number}] {chunk.source}#chunk-{chunk.ordinal} score={score:.4f}")
+        location = f" page={chunk.page}" if chunk.page is not None else ""
+        section = f" section={chunk.section}" if chunk.section else ""
+        print(f"[{number}] {chunk.title or chunk.source} ({chunk.source}{location}{section}) "
+              f"chunk_id={chunk.chunk_id or chunk.ordinal} score={score:.4f}")
     return 0
 
 
